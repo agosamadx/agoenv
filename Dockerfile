@@ -6,6 +6,9 @@ ARG USER_NAME
 ARG LOGIN_SHELL=/bin/bash
 ENV SHELL=$LOGIN_SHELL
 
+# add library path
+ENV LD_LIBRARY_PATH /usr/local/lib64
+
 # add apt repository
 RUN apt-get update \
  && apt-get -y install software-properties-common curl gnupg \
@@ -25,7 +28,7 @@ RUN echo "ja_JP.UTF-8 UTF-8" >> /etc/locale.gen \
 
 # build gcc
 RUN cd /usr/local/src \
- && git clone --depth 1 -b releases/gcc-10.2.0 git://gcc.gnu.org/git/gcc.git \
+ && git clone --depth 1 -b master git://gcc.gnu.org/git/gcc.git \
  && cd gcc \
  && ./contrib/download_prerequisites \
  && mkdir build \
@@ -37,20 +40,9 @@ RUN cd /usr/local/src \
  && update-alternatives --install /usr/bin/cc cc /usr/local/bin/gcc 1000 \
  && update-alternatives --install /usr/bin/c++ c++ /usr/local/bin/g++ 1000
 
-# install libraries
-RUN apt-get update \
- && apt-get install -y libboost-all-dev libvulkan-dev libgtest-dev \
- && apt-get clean
-
-# install other software
-RUN apt-get update \
- && apt-get install -y tmux vim emacs-nox rtags \
- && apt-get clean \
- && update-alternatives --install /usr/bin/rc rc /usr/bin/rtags-rc 1000 \
- && update-alternatives --install /usr/bin/rdm rdm /usr/bin/rtags-rdm 1000
-
+# install cmake
 RUN cd /usr/local/src \
- && git clone -b v3.18.2 --depth 1 https://gitlab.kitware.com/cmake/cmake.git \
+ && git clone -b v3.20.0-rc4 --depth 1 https://gitlab.kitware.com/cmake/cmake.git \
  && cd cmake \
  && ./bootstrap \
  && make \
@@ -67,6 +59,18 @@ RUN apt-get update \
  && update-alternatives --install /usr/bin/lldb lldb /usr/bin/lldb-11 1000 \
  && update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-11 1000 \
  && update-alternatives --install /usr/bin/clang-tidy clang-tidy /usr/bin/clang-tidy-11 1000
+
+# install libraries
+RUN apt-get update \
+ && apt-get install -y libvulkan-dev libgtest-dev xorg-dev \
+ && apt-get clean
+
+# install other software
+RUN apt-get update \
+ && apt-get install -y tmux vim emacs-nox rtags \
+ && apt-get clean \
+ && update-alternatives --install /usr/bin/rc rc /usr/bin/rtags-rc 1000 \
+ && update-alternatives --install /usr/bin/rdm rdm /usr/bin/rtags-rdm 1000
 
 # create user
 RUN useradd --uid "${USER_UID}" -d "/home/${USER_NAME}" -s "${LOGIN_SHELL}" "${USER_NAME}"
