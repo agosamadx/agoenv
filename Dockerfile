@@ -40,16 +40,6 @@ RUN cd /usr/local/src \
  && update-alternatives --install /usr/bin/cc cc /usr/local/bin/gcc 1000 \
  && update-alternatives --install /usr/bin/c++ c++ /usr/local/bin/g++ 1000
 
-# install cmake
-RUN cd /usr/local/src \
- && git clone -b v3.20.0-rc4 --depth 1 https://gitlab.kitware.com/cmake/cmake.git \
- && cd cmake \
- && ./bootstrap \
- && make \
- && make install \
- && cd .. \
- && rm -rf cmake
-
 # install clang
 RUN apt-get update \
  && apt-get install -y clang-11 lldb-11 lld-11 clang-tools-11 clang-format-11 clang-tidy-11 libc++-11-dev libc++abi-11-dev libclang-11-dev \
@@ -60,10 +50,27 @@ RUN apt-get update \
  && update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-11 1000 \
  && update-alternatives --install /usr/bin/clang-tidy clang-tidy /usr/bin/clang-tidy-11 1000
 
-# install libraries
-RUN apt-get update \
- && apt-get install -y libvulkan-dev libgtest-dev xorg-dev \
- && apt-get clean
+# install cmake
+RUN cd /usr/local/src \
+ && git clone -b v3.20.1 --depth 1 https://gitlab.kitware.com/cmake/cmake.git \
+ && cd cmake \
+ && ./bootstrap \
+ && make \
+ && make install \
+ && cd .. \
+ && rm -rf cmake
+
+# install extra-cmake-modules
+RUN cd /usr/local/src \
+ && git clone -b v5.82.0 --depth 1 https://github.com/KDE/extra-cmake-modules.git \
+ && cd extra-cmake-modules \
+ && mkdir build \
+ && cd build \
+ && cmake .. \
+ && make \
+ && make install \
+ && cd .. \
+ && rm -rf extra-cmake-modules
 
 # install other software
 RUN apt-get update \
@@ -71,6 +78,20 @@ RUN apt-get update \
  && apt-get clean \
  && update-alternatives --install /usr/bin/rc rc /usr/bin/rtags-rc 1000 \
  && update-alternatives --install /usr/bin/rdm rdm /usr/bin/rtags-rdm 1000
+
+# install libraries
+RUN apt-get update \
+ && apt-get install -y libwayland-dev wayland-protocols libxkbcommon-dev libvulkan-dev libgtest-dev pkg-config libncurses-dev texinfo automake autoconf libgnutls28-dev \
+ && apt-get clean
+
+# build emacs
+RUN cd /usr/local/src \
+ && git clone --depth 1 -b emacs-27.2 https://git.savannah.gnu.org/git/emacs.git \
+ && cd emacs \
+ && ./autogen.sh \
+ && ./configure \
+ && make \
+ && make install
 
 # create user
 RUN useradd --uid "${USER_UID}" -d "/home/${USER_NAME}" -s "${LOGIN_SHELL}" "${USER_NAME}"
