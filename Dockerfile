@@ -6,12 +6,14 @@ ARG USER_NAME
 ARG LOGIN_SHELL=/bin/bash
 ENV SHELL=$LOGIN_SHELL
 
+COPY update-alternatives-clang.sh /root
+
 # add library path
 ENV LD_LIBRARY_PATH /usr/local/lib64
 
 # install base packages
 RUN apt-get update \
- && apt-get install -y sudo less locales zsh build-essential git \
+ && apt-get install -y sudo less locales zsh build-essential git cmake extra-cmake-modules ninja-build \
  && apt-get clean
 
 # set environment
@@ -39,55 +41,43 @@ RUN echo "ja_JP.UTF-8 UTF-8" >> /etc/locale.gen \
 
 # install clang
 RUN apt-get update \
- && apt-get install -y clang \
- && apt-get clean
+ && apt-get install -y llvm-15-dev lld-15 clang-15 clang-tidy-15 clang-format-15 clangd-15 libclang-15-dev lldb-15 libomp-15-dev libc\+\+-15-dev libc\+\+abi-15-dev \
+ && apt-get clean \
+ && /root/update-alternatives-clang.sh 15 1000
 
 # install cmake
-RUN apt-get update \
- && apt-get install -y libssl-dev \
- && apt-get clean \
- && cd /usr/local/src \
- && git clone -b v3.23.1 --depth 1 https://gitlab.kitware.com/cmake/cmake.git \
- && cd cmake \
- && ./bootstrap \
- && make \
- && make install \
- && cd .. \
- && rm -rf cmake
+#RUN apt-get update \
+# && apt-get install -y libssl-dev \
+# && apt-get clean \
+# && cd /usr/local/src \
+# && git clone -b v3.25.0 --depth 1 https://gitlab.kitware.com/cmake/cmake.git \
+# && cd cmake \
+# && ./bootstrap \
+# && make \
+# && make install \
+# && cd .. \
+# && rm -rf cmake
 
 # install extra-cmake-modules
-RUN cd /usr/local/src \
- && git clone -b v5.94.0 --depth 1 https://github.com/KDE/extra-cmake-modules.git \
- && cd extra-cmake-modules \
- && mkdir build \
- && cd build \
- && cmake .. \
- && make \
- && make install \
- && cd .. \
- && rm -rf extra-cmake-modules
+#RUN cd /usr/local/src \
+# && git clone -b v5.94.0 --depth 1 https://github.com/KDE/extra-cmake-modules.git \
+# && cd extra-cmake-modules \
+# && mkdir build \
+# && cd build \
+# && cmake .. \
+# && make \
+# && make install \
+# && cd .. \
+# && rm -rf extra-cmake-modules
 
 # install other software
 RUN apt-get update \
  && apt-get install -y tmux vim automake autoconf pkg-config \
  && apt-get clean
 
-RUN apt-get update \
- && apt-get install -y llvm-dev libclang-dev zlib1g-dev \
- && cd /usr/local/src \
- && git clone --recursive --depth 1 https://github.com/Andersbakken/rtags.git \
- && cd rtags \
- && mkdir build \
- && cd build \
- && cmake .. \
- && make \
- && make install \
- && cd .. \
- && rm -rf rtags
-
 # install libraries
 RUN apt-get update \
- && apt-get install -y libwayland-dev wayland-protocols libxkbcommon-dev libvulkan-dev libgtest-dev pkg-config \
+ && apt-get install -y libwayland-dev wayland-protocols libxkbcommon-dev libvulkan-dev glslang-dev glslang-tools libgtest-dev pkg-config \
  && apt-get clean
 
 # build emacs
